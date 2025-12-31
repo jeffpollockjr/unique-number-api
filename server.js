@@ -5,7 +5,6 @@ const { Pool } = require('pg');
 const app = express();
 app.use(express.json());
 
-// Enable CORS for Bubble.io
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -16,13 +15,11 @@ app.use((req, res, next) => {
   next();
 });
 
-// Database connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// Initialize database table
 async function initDB() {
   try {
     await pool.query(`
@@ -45,12 +42,10 @@ async function initDB() {
   }
 }
 
-// Generate random 9-digit number
 function generateNumber() {
   return Math.floor(111111111 + Math.random() * (999999999 - 111111111 + 1));
 }
 
-// Generate unique number
 async function generateUniqueNumber(maxAttempts = 10) {
   for (let i = 0; i < maxAttempts; i++) {
     const number = generateNumber();
@@ -73,7 +68,6 @@ async function generateUniqueNumber(maxAttempts = 10) {
   throw new Error('Failed to generate unique number');
 }
 
-// Generate number endpoint
 app.post('/api/generate-number', async (req, res) => {
   try {
     const uniqueNumber = await generateUniqueNumber();
@@ -95,7 +89,6 @@ app.post('/api/generate-number', async (req, res) => {
   }
 });
 
-// Check if number exists
 app.get('/api/check-number/:number', async (req, res) => {
   try {
     const number = parseInt(req.params.number);
@@ -114,7 +107,6 @@ app.get('/api/check-number/:number', async (req, res) => {
   }
 });
 
-// Get statistics
 app.get('/api/stats', async (req, res) => {
   try {
     const result = await pool.query(
@@ -138,12 +130,10 @@ app.get('/api/stats', async (req, res) => {
   }
 });
 
-// Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Root endpoint
 app.get('/', (req, res) => {
   res.json({
     message: 'Unique Number Generator API',
@@ -166,27 +156,3 @@ initDB().then(() => {
   console.error('❌ Failed:', err);
   process.exit(1);
 });
-```
-
-3. Press `Ctrl+S` (Windows) or `Cmd+S` (Mac) to save
-
-### File 2: .gitignore
-
-1. Click on `.gitignore` in the left sidebar
-2. Copy and paste this:
-```
-node_modules/
-.env
-.DS_Store
-*.log
-```
-
-3. Save it (`Ctrl+S` or `Cmd+S`)
-
-### File 3: .env
-
-1. Click on `.env` in the left sidebar
-2. Copy and paste this:
-```
-NODE_ENV=development
-PORT=3000
