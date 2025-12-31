@@ -146,6 +146,91 @@ app.get('/', (req, res) => {
   });
 });
 
+// Delete a specific number
+app.delete('/api/delete-number/:number', async (req, res) => {
+  try {
+    const number = parseInt(req.params.number);
+    
+    if (isNaN(number) || number < 111111111 || number > 999999999) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid number'
+      });
+    }
+    
+    const result = await pool.query(
+      'DELETE FROM unique_numbers WHERE number = $1 RETURNING *',
+      [number]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Number not found'
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Number deleted',
+      data: result.rows[0]
+    });
+  } catch (error) {
+    console.error('❌ Error deleting number:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Delete numbers older than X days
+app.delete('/api/cleanup', async (req, res) => {
+  try {
+    const daysOld = parseInt(req.query.days) || 1825; // Default 5 years (1825 days)
+    
+    const result = await pool.query(
+      'DELETE FROM unique_numbers WHERE created_at < NOW() - INTERVAL \'1 day\' * $1 RETURNING count(*)',
+      [daysOld]
+    );
+    
+    const deletedCount = result.rowCount;
+    
+    res.json({
+      success: true,
+      message: `Deleted numbers older than ${daysOld} days`,
+      deleted_count: deletedCount
+    });
+  } catch (error) {
+    console.error('❌ Error during cleanup:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Delete all numbers (use with caution!)
+app.delete('/api/delete-all', async (req, res) => {
+  try {
+    // Optional: Add authentication check here
+    const confirmToken = req.query.confirm;
+    
+    if (confirmToken !== 'DELETE_ALL_NUMBERS') {
+      return res.status(403).json({
+        success: false,
+        error: 'Must provide confirm=DELETE_ALL_NUMBERS parameter'
+      });
+    }
+    
+    const result = await pool.query('DELETE FROM unique_numbers RETURNING count(*)');
+    const deletedCount = result.rowCount;
+    
+    res.json({
+      success: true,
+      message: 'All numbers deleted',
+      deleted_count: deletedCount
+    });
+  } catch (error) {
+    console.error('❌ Error deleting all:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 
 initDB().then(() => {
