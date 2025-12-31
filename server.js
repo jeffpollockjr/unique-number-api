@@ -187,7 +187,7 @@ app.delete('/api/cleanup', async (req, res) => {
     const daysOld = parseInt(req.query.days) || 1825; // Default 5 years (1825 days)
     
     const result = await pool.query(
-      'DELETE FROM unique_numbers WHERE created_at < NOW() - INTERVAL \'1 day\' * $1 RETURNING count(*)',
+      'DELETE FROM unique_numbers WHERE created_at < NOW() - INTERVAL \'1 day\' * $1',
       [daysOld]
     );
     
